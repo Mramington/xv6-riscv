@@ -9,6 +9,7 @@ int main(void) {
 	int was_space = 0;
 	while ((n = read(0, buf + pos, 1)) > 0) {
 		if (pos >= 127) {
+			printf("|%s|\n", buf);
 			printf("Invalid input: buffer overflow\n");
 			return 1;
 		}
@@ -35,26 +36,31 @@ int main(void) {
 			continue;
 		}
 
+		printf("|%s|\n", buf);
 		printf("Invalid input: Invalid symbols\n");
 		return 1;
 	}
 
 	if (n < 0) {
+		printf("|%s|\n", buf);
 		printf("read error\n");
 		return 1;
 	}
 
 	if (first_pos == -1) {
+		printf("|%s|\n", buf);
 		printf("Invalid input: No first number\n");
 		return 1;
 	}
 
 	if (was_space == 0) {
+		printf("|%s|\n", buf);
 		printf("Invalid input: No space\n");
 		return 1;
 	}
 
 	if (second_pos == -1) {
+		printf("|%s|\n", buf);
 		printf("Invalid input: No second number\n");
 		return 1;
 	}
@@ -62,6 +68,7 @@ int main(void) {
 	int a = atoi(buf + first_pos);
 	int b = atoi(buf + second_pos);
 	int c = add(a, b);
+	printf("|%s|\n", buf);
 	printf("%d\n", c);
 	return 0;
 }
