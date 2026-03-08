@@ -24,10 +24,11 @@ main:
     sd s5, 8(sp)
 
     # s0 = base pointer to buf
-    la      s0, buf
+    la s0, buf
 
     # gets(buf)
     mv a0, s0
+    li a1, 128
     call gets
     beqz a0, .Lgets_error   # gets returned NULL
 
@@ -100,39 +101,40 @@ main:
     j .Lloop
 
 .Linvalid:
-    la a0, msg_invalid
+    la a1, msg_invalid
     j .Lprint_ret
 
 .Loverflow:
-    la a0, msg_overflow
+    la a1, msg_overflow
     j .Lprint_ret
 
 .Lgets_error:
-    la a0, msg_gets_err
+    la a1, msg_gets_err
     j .Lprint_ret
 
 .Lend_scan:
     # _if (first_pos == -1) error
     li  t0, -1
     bne s1, t0, .Lcheck_space
-    la a0, msg_no_first
+    la a1, msg_no_first
     j .Lprint_ret
 
 .Lcheck_space:
     # _if (was_space == 0) error
     bnez s3, .Lcheck_second
-    la a0, msg_no_space
+    la a1, msg_no_space
     j .Lprint_ret
 
 .Lcheck_second:
     # _if (second_pos == -1) error
     li t0, -1
     bne s2, t0, .Lcompute
-    la a0, msg_no_second
+    la a1, msg_no_second
     j .Lprint_ret
 
 .Lprint_ret:
-    call printf
+    li a1, 2
+    call fprintf
     li a0, 1
     j .Lret
 
