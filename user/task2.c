@@ -46,7 +46,7 @@ int main(int argc, char**argv) {
             return 1;
         }
     } else {
-        int arglen, n;
+        int arglen;
         int total_written, written;
         for (int i = 1; i < argc; ++i) {
             total_written = 0;
