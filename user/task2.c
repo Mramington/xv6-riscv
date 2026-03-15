@@ -10,75 +10,85 @@ int main(int argc, char**argv) {
     int pipefd[2];
     
     if (pipe(pipefd)) {
-        printf("failed pipe\n");
+        fprintf(2, "failed pipe\n");
         return 1;
     }
 
     int pid = fork();
     
     if (pid < 0) {
-        printf("fork exception\n");
+        fprintf(2, "fork exception\n");
         return 1;
     } else if (pid == 0) {
         if (close(pipefd[1])) {
-            printf("child: failed pipefd[1]-close\n");
+            fprintf(2, "child: failed pipefd[1]-close\n");
             return 1;
         }
 
         if (close(0)) {
-            printf("child: failed stdin-close\n");
+            fprintf(2, "child: failed stdin-close\n");
             return 1;
         }
 
         if (dup(pipefd[0])) {
-            printf("child: failed dup\n");
+            fprintf(2, "child: failed dup\n");
             return 1;
         }
 
         if (close(pipefd[0])) {
-            printf("child: failed pipefd[0]-close\n");
+            fprintf(2, "child: failed pipefd[0]-close\n");
             return 1;
         }
 
         char *exec_argv[] = {"/wc", 0};
         if (exec("/wc", exec_argv)) {
-            printf("child: failed exec\n");
+            fprintf(2, "child: failed exec\n");
             return 1;
         }
     } else {
         int arglen, n;
+        int total_written, written;
         for (int i = 1; i < argc; ++i) {
+            total_written = 0;
             arglen = strlen(argv[i]);
-            if ((n = write(pipefd[1], argv[i], arglen)) < 0) {
-                printf("parent: failed write\n");
-                return 1;
-            } else if (n < arglen) {
-                printf("parent: write output less than arglen\n");
-                return 1;
+            while (total_written < arglen) {
+                written = write(pipefd[1], argv[i] + total_written, arglen - total_written);
+                if (written == -1) {
+                    fprintf(2, "parent: failed write\n");
+                    return 1;        
+                } else if (written == 0) {
+                    break;
+                }
+                total_written += written;
             }
 
-            if ((n = write(pipefd[1], "\n", 1)) < 1) {
-                printf("parent: failed write\n");
-                return 1;
-            } else if (n < 1) {
-                printf("parent: write output less than 1\n");
-                return 1;
+            arglen = 1;
+            total_written = 0;
+            while (total_written < arglen) {
+                written = write(pipefd[1], "\n", arglen);
+                if (written == -1) {
+                    fprintf(2, "parent: failed write\n");
+                    return 1;        
+                } else if (written == 0) {
+                    break;
+                }
+                total_written += written;
             }
         }
 
         if (close(pipefd[0])) {
-            printf("parent: failed pipefd[0]-close\n");
+            fprintf(2, "parent: failed pipefd[0]-close\n");
             return 1;
         }
 
         if (close(pipefd[1])) {
-            printf("parent: failed pipefd[1]-close\n");
+            fprintf(2, "parent: failed pipefd[1]-close\n");
             return 1;
         }
 
         int ret_code;
         if (wait(&ret_code) < 0) {
-            printf("parent: failed wait\n");
+            fprintf(2, "parent: failed wait\n");
             return 1;
         }
     }
