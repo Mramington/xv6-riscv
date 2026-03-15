@@ -11,99 +11,89 @@ int main(int argc, char**argv) {
     int pipefd[2];
     
     if (pipe(pipefd)) {
-        printf("failed pipe\n");
+        fprintf(stderr, "failed pipe\n");
         return 1;
     }
 
     int pid = fork();
     
     if (pid < 0) {
-        printf("fork exception\n");
+        fprintf(stderr, "fork exception\n");
         return 1;
     } else if (pid == 0) {
         if (close(pipefd[1])) {
-            printf("child: failed pipefd[1]-close\n");
+            fprintf(stderr, "child: failed pipefd[1]-close\n");
             return 1;
         }
 
         char* buf = malloc(PG_COUNT * PGSIZE);
         if (!buf) {
-            printf("child: failed malloc]\n");
+            fprintf(stderr, "child: failed malloc]\n");
             return 1;
         }
 
-        int n, pos = 0;
-        int flag = 0;
-        while(buf[pos] != '\n') {
-            pos = 0;
-            while ((n = read(pipefd[0], buf + pos, 1))) {
-                if (n < 0) {
-                    printf("child: failed read\n");
+        int n, total_written, written;
+        n = read(pipefd[0], buf, PGSIZE);
+        while(n != 0) {
+            if (n < 0) {
+                fprintf(stderr, "child: failed read\n");
+                return 1;
+            }
+
+            total_written = 0;
+            while (total_written < n) {
+                written = write(1, buf + total_written, n - total_written);
+                if (written < 0) {
+                    fprintf(stderr, "child: failed write\n");
                     return 1;
-                }
-
-                if (buf[pos] == '\0') {
-                    break;
-                } else if (buf[pos] == '\n') {
-                    flag = 1;
+                } else if (written == 0) {
                     break;
                 }
 
-                ++pos;
+                total_written += written;
             }
 
-            if (!flag && buf[pos] != '\0') {
-                printf("child: failed read - EOF before null\n");
-                return 1;
-            }
-
-            if ((n = write(1, buf, pos + 1)) < 0) {
-                printf("child: failed write\n");
-                return 1;
-            } else if (n < pos + 1) {
-                printf("child: write output less than pos + 1\n");
-                return 1;
-            }
+            n = read(pipefd[0], buf, PGSIZE);
         }
         
         free(buf);
 
         if (close(pipefd[0])) {
-            printf("child: failed pipefd[0]-close\n");
+            fprintf(stderr, "child: failed pipefd[0]-close\n");
             return 1;
         }
     } else {
         int arglen;
-        int n;
+        int written, total_written;
         for (int i = 0; i < argc; ++i) {
-            arglen = strlen(argv[i]);
-            if ((n = write(pipefd[1], argv[i], arglen + 1)) < 0) {
-                printf("parent: failed write\n");
-                return 1;
-            } else if (n < arglen + 1) {
-                printf("parent: write output less than arglen + 1\n");
-                return 1;
+            total_written = 0;
+            arglen = strlen(argv[i]) + 1;
+            while (total_written < arglen) {
+                written = write(pipefd[1], argv[i] + total_written, arglen - total_written);
+                if (written == -1) {
+                    fprintf(stderr, "parent: failed write\n");
+                    return 1;
+                } else if (written == 0) {
+                    break;
+                }
+
+                total_written += written;
             }
-        }
-        
-        if (write(pipefd[1], "\n", 1) < 0) {
-            printf("parent: failed write");
-            return 1;
         }
 
         if (close(pipefd[0])) {
-            printf("parent: failed pipefd[0]-close\n");
+            fprintf(stderr, "parent: failed pipefd[0]-close\n");
             return 1;
         }
 
         if (close(pipefd[1])) {
-            printf("parent: failed pipefd[1]-close\n");
+            fprintf(stderr, "parent: failed pipefd[1]-close\n");
             return 1;
         }
 
         int ret_code;
         if (wait(&ret_code) < 0) {
-            printf("parent: failed wait\n");
+            fprintf(stderr, "parent: failed wait\n");
             return 1;
         }
     }
