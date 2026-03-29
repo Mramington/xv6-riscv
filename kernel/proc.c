@@ -704,6 +704,7 @@ ps_listinfo(uint64 uaddr, int lim)
   for(p = proc; p < &proc[NPROC]; ++p){
     used = 0;
 
+    acquire(&wait_lock);
     acquire(&p->lock);
 
     if(p->state != UNUSED){
@@ -713,17 +714,16 @@ ps_listinfo(uint64 uaddr, int lim)
       info.state = p->state;
       safestrcpy(info.name, p->name, sizeof(info.name));
 
-      acquire(&wait_lock);
       if(p->parent)
         info.ppid = p->parent->pid;
       else
         info.ppid = -1;
-      release(&wait_lock);
 
       ++total;
     }
 
     release(&p->lock);
+    release(&wait_lock);
 
     if(!used || !uaddr)
       continue;
