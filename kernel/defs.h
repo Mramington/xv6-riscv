@@ -22,6 +22,11 @@ void            consoleinit(void);
 void            consoleintr(int);
 void            consputc(int);
 
+// my_driver.c
+void my_driver_init(void);
+int my_driver_read(int user_dst, uint64 dst, int n, short minor);
+int my_driver_write(int user_src, uint64 src, int n, short minor);
+
 // exec.c
 int             kexec(char*, char**);
 

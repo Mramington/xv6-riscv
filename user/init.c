@@ -20,6 +20,12 @@ main(void)
     mknod("console", CONSOLE, 0);
     open("console", O_RDWR);
   }
+
+  mknod("null", MY_DRIVER, MINOR_NULL);
+  mknod("zero", MY_DRIVER, MINOR_ZERO);
+  mknod("urandom", MY_DRIVER, MINOR_URANDOM);
+  mknod("nullstat", MY_DRIVER, MINOR_NULLSTAT);
+
   dup(0);  // stdout
   dup(0);  // stderr
 
