@@ -15,7 +15,7 @@ hexval(char c)
 int
 main(int argc, char *argv[])
 {
-  int fd, len, i, n, r;
+  int fd, len, i, n, r, hi, lo, written;
   char *s;
   uchar buf[256];
   int hi, lo;
@@ -49,11 +49,22 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  r = write(fd, buf, n);
-  if(r != n){
-    fprintf(2, "Write error\n");
-    close(fd);
-    exit(1);
+  written = 0;
+  while(written < n){
+    r = write(fd, buf + written, n - written);
+    if(r < 0){
+      fprintf(2, "fail: write error\n");
+      close(fd);
+      exit(1);
+    }
+
+    if(r == 0){
+      fprintf(2, "fail: zero write\n");
+      close(fd);
+      exit(1);
+    }
+
+    written += r;
   }
 
   close(fd);

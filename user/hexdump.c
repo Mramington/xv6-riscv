@@ -13,7 +13,7 @@ print_hex_byte(uchar b)
 int
 main(int argc, char *argv[])
 {
-  int fd, n, i, r;
+  int fd, n, i, r, got;
   uchar buf[256];
 
   if(argc != 3){
@@ -33,14 +33,20 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  r = read(fd, buf, n);
-  if(r < 0){
-    fprintf(2, "fail: read error\n");
-    close(fd);
-    exit(1);
+  got = 0;
+  while(got < n){
+    r = read(fd, buf + got, n - got);
+    if(r < 0){
+      fprintf(2, "fail: read error\n");
+      close(fd);
+      exit(1);
+    }
+    if(r == 0)
+      break;
+    got += r;
   }
 
-  for (i = 0; i < r; ++i) {
+  for(i = 0; i < got; i++){
     if(i) printf(" ");
     print_hex_byte(buf[i]);
   }

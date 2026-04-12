@@ -79,13 +79,24 @@ my_driver_write(int user_src, uint64 src, int n, short minor)
 int
 zero_read(int user_dst, uint64 dst, int n)
 {
-  int i;
-  uchar c = 0;
+  uchar zeros[64];
+  int remaining = n;
+  int chunk;
 
-  for(i = 0; i < n; i++){
-    if(either_copyout(user_dst, dst + i, &c, 1) < 0)
+  memset(zeros, 0, sizeof(zeros));
+
+  while(remaining > 0){
+    chunk = remaining;
+    if(chunk > sizeof(zeros))
+      chunk = sizeof(zeros);
+
+    if(either_copyout(user_dst, dst, zeros, chunk) < 0)
       return -1;
+
+    dst += chunk;
+    remaining -= chunk;
   }
+
   return n;
 }
 
