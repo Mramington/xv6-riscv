@@ -26,6 +26,9 @@ kvmmake(void)
   kpgtbl = (pagetable_t) kalloc();
   memset(kpgtbl, 0, PGSIZE);
 
+  // rtc registers
+  kvmmap(kpgtbl, RTC_TIME_MINOR, RTC_TIME_MINOR, PGSIZE, PTE_R  );
+
   // uart registers
   kvmmap(kpgtbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
 
