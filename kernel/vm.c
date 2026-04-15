@@ -17,6 +17,113 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+static void
+pte_flags_string(pte_t pte, char s[7 + 1])
+{
+  s[0] = (pte & PTE_R) ? 'R' : '_';
+  s[1] = (pte & PTE_W) ? 'W' : '_';
+  s[2] = (pte & PTE_X) ? 'X' : '_';
+  s[3] = (pte & PTE_U) ? 'U' : '_';
+  s[4] = (pte & PTE_G) ? 'G' : '_';
+  s[5] = (pte & PTE_A) ? 'A' : '_';
+  s[6] = (pte & PTE_D) ? 'D' : '_';
+  s[7] = '\0';
+}
+
+static void
+print_indent(int level)
+{
+  if(level == 1)
+    printf("......... ");
+  else if(level == 2)
+    printf("...................");
+}
+
+static void
+pgtprint_walk(pagetable_t pagetable, int level)
+{
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      uint64 pa = PTE2PA(pte);
+      char flags[8];
+      pte_flags_string(pte, flags);
+
+      if(level > 0) print_indent(level);
+
+      printf("0x%x -> %p %s\n", i, (void*)pa, flags);
+
+      if((pte & (PTE_R | PTE_W | PTE_X)) == 0){
+        pgtprint_walk((pagetable_t)pa, level + 1);
+      }
+    }
+  }
+}
+
+void
+proc_pgtprint(pagetable_t pagetable)
+{
+  printf("PAGETABLE %p\n", (void*)pagetable);
+  pgtprint_walk(pagetable, 0);
+}
+
+static int
+valid_ad_mask(int mask)
+{
+  if(mask == 0)
+    return 0;
+  if(mask & ~(PTE_A | PTE_D))
+    return 0;
+  return 1;
+}
+
+#define PGOP_CLEAR 1
+#define PGOP_CHECK 2
+
+int
+ptbuf_op(pagetable_t pagetable, uint64 uva, int len, int mask, int op)
+{
+  uint64 a, last;
+  pte_t *pte;
+  int found = 0;
+
+  if(len <= 0) return -1;
+  if(!valid_ad_mask(mask)) return -1;
+  if(uva >= MAXVA) return -1;
+  if(uva + (uint64)len < uva) return -1;
+
+  last = PGROUNDDOWN(uva + len - 1);
+
+  for(a = PGROUNDDOWN(uva); ; a += PGSIZE){
+    if(a >= MAXVA)
+      return -1;
+
+    pte = walk(pagetable, a, 0);
+    if(pte == 0)
+      return -1;
+
+    if(((*pte & PTE_V) == 0) || ((*pte & PTE_U) == 0))
+      return -1;
+
+    if(op == PGOP_CLEAR){
+      *pte &= ~mask;
+    } else if(op == PGOP_CHECK){
+      if((*pte & mask) != 0)
+        found = 1;
+    }
+
+    if(a == last)
+      break;
+  }
+
+  if(op == PGOP_CLEAR){
+    sfence_vma();
+    return 0;
+  }
+
+  return found;
+}
+
 // Make a direct-map page table for the kernel.
 pagetable_t
 kvmmake(void)

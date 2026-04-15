@@ -183,3 +183,6 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+void proc_pgtprint(pagetable_t pagetable);
+int ptbuf_op(pagetable_t pagetable, uint64 uva, int len, int mask, int op);

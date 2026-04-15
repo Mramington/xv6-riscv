@@ -7,6 +7,45 @@
 #include "proc.h"
 #include "vm.h"
 
+#define PGOP_CLEAR 1
+#define PGOP_CHECK 2
+
+uint64
+sys_pgtprint(void)
+{
+  struct proc *p = myproc();
+  proc_pgtprint(p->pagetable);
+  return 0;
+}
+
+uint64
+sys_pgclear(void)
+{
+  uint64 buf;
+  int len, flags;
+  struct proc *p = myproc();
+
+  argaddr(0, &buf);
+  argint(1, &len);
+  argint(2, &flags);
+
+  return ptbuf_op(p->pagetable, buf, len, flags, PGOP_CLEAR);
+}
+
+uint64
+sys_pgcheck(void)
+{
+  uint64 buf;
+  int len, flags;
+  struct proc *p = myproc();
+
+  argaddr(0, &buf);
+  argint(1, &len);
+  argint(2, &flags);
+
+  return ptbuf_op(p->pagetable, buf, len, flags, PGOP_CHECK);
+}
+
 uint64
 sys_exit(void)
 {
