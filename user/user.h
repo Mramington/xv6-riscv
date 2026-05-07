@@ -2,6 +2,9 @@
 
 struct stat;
 
+int dmesg(char *buf, int max);
+int logctl(int mask, int duration);
+
 // system calls
 int fork(void);
 int exit(int) __attribute__((noreturn));

@@ -134,7 +134,10 @@ kexec(char *path, char **argv)
   p->trapframe->epc = elf.entry;  // initial program counter = ulib.c:start()
   p->trapframe->sp = sp; // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
-
+  
+  if (log_enabled(LOG_EXEC)) {
+    pr_msg("exec: pid=%d app=%s", p->pid, path);
+  }
   return argc; // this ends up in a0, the first argument to main(argc, argv)
 
  bad:

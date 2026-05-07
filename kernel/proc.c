@@ -302,6 +302,12 @@ kfork(void)
   np->state = RUNNABLE;
   release(&np->lock);
 
+  if (log_enabled(LOG_PROC)) {
+    pr_msg("proc: fork parent pid=%d name=%s child pid=%d name=%s",
+           p->pid, p->name, pid, np->name);
+  }
+
+
   return pid;
 }
 
@@ -345,6 +351,17 @@ kexit(int status)
   end_op();
   p->cwd = 0;
 
+  int ppid = 0;
+  if(log_enabled(LOG_PROC)){
+    acquire(&wait_lock);
+    if(p->parent)
+      ppid = p->parent->pid;
+    release(&wait_lock);
+
+    pr_msg("proc: exit pid=%d name=%s parent pid=%d status=%d",
+           p->pid, p->name, ppid, status);
+  }
+
   acquire(&wait_lock);
 
   // Give any children to init.
@@ -359,7 +376,6 @@ kexit(int status)
   p->state = ZOMBIE;
 
   release(&wait_lock);
-
   // Jump into the scheduler, never to return.
   sched();
   panic("zombie exit");

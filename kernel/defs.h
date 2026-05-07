@@ -9,6 +9,13 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+void dmsginit(void);
+void dmsg_putc(char);
+void pr_msg(const char*, ...);
+int dmsg_read(uint64, int);
+int log_enabled(int);
+void log_set(int, int);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
